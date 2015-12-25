@@ -43,6 +43,10 @@ COMMANDS
 	Do off-line check on a btrfs filesystem. +
 	See `btrfs-check`(8) for details.
 
+*dedup*::
+	Control btrfs in-band(write time) de-duplication. +
+	See `btrfs-dedup`(8) for details.
+
 *device*::
 	Manage devices managed by btrfs, including add/delete/scan and so
 	on. +
