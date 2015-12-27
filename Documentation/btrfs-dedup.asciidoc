@@ -21,7 +21,84 @@ use with caution.
 
 SUBCOMMAND
 ----------
-Nothing yet
+*enable* [options] <path>::
+Enable in-band de-duplication for a filesystem.
++
+`Options`
++
+-s|--storage-backend <BACKEND>::::
+Specify de-duplication hash storage backend.
+Supported backends are 'ondisk' and 'inmemory'.
+If not specified, default value is 'inmemory'.
++
+Refer to *BACKENDS* sector for more information.
+
+-b|--blocksize <BLOCKSIZE>::::
+Specify dedup block size.
+Supported values are power of 2 from '16K' to '8M'.
+Default value is '128K'.
++
+Refer to *BLOCKSIZE* sector for more information.
+
+-a|--hash-algorithm <HASH>::::
+Specify hash algorithm.
+Only 'sha256' is supported yet.
+
+-l|--limit-hash <LIMIT>::::
+Specify maximum number of hashes stored in memory.
+Only works for 'inmemory' backend.
+Default value is '32K' if using 'inmemory' backend.
+
+-m|--limit-memory <LIMIT>::::
+Specify maximum memory used for hashes.
+Only works for 'inmemory' backend.
+No default value.
+
+BACKENDS
+--------
+Btrfs in-band de-duplication support two different backends with their own
+features.
+
+In-memory backend::
+This backend can be used on old btrfs(without '-O dedup' mkfs option) with
+newer kernel(4.6+).
+When used on old btrfs, this backend must be re-enabled after umount.
++
+Designed for speed, in-memory backend will keep all dedup hash in memory.
+And only keeps a limit of number of hash in memory.
+Hashes over the limit will be dropped following Last-Recent-Use behavior.
+So this backend has a consistent overhead for given limit but can't ensure
+any all duplicated blocks will be de-duplicated.
++
+After umount and mount, in-memory backend need to refill its hash table.
+
+On-disk backend::
+This backend needs '-O dedup' mkfs option to enable.
++
+Designed for de-duplication rate, on-disk backend will keep dedup hash on disk.
+This behavior may cause extra disk IO for de-duplication under high memory
+pressure, but will have a much higher dedup rate.
++
+After umount and mount, on-disk backend still has its hash on disk, no need to
+refill its dedup hash table.
+
+BLOCKSIZE
+---------
+Block in-band de-duplication is done at block size unit.
+Any data smaller than dedup block size won't go through the dedup backends.
+
+Smaller block size will cause more fragments and lower performance, but a
+higher dedup rate.
+
+Larger block size will cause less fragments and higher performance, but a
+lower dedup rate.
+
+In-band de-duplication rate is highly related to the workload pattern.
+So it's highly recommended to align de-duplication blocksize to the workload
+blocksize to make full use of de-duplication.
+
+And blocksize larger than 128K will cause compression unavailable, as
+compression only support maximum extent size of 128K.
 
 EXIT STATUS
 -----------
