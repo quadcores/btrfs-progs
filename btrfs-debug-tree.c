@@ -408,6 +408,10 @@ again:
 					printf("multiple");
 				}
 				break;
+			case BTRFS_DEDUP_TREE_OBJECTID:
+				if (!skip)
+					printf("dedup");
+				break;
 			default:
 				if (!skip) {
 					printf("file");
