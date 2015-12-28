@@ -328,6 +328,15 @@ struct readable_flag_entry {
 	u64 bit;
 	char *output;
 };
+#define DEF_RO_COMPAT_FLAG_ENTRY(bit_name)		\
+	{BTRFS_FEATURE_COMPAT_RO_##bit_name, #bit_name}
+
+struct readable_flag_entry ro_compat_flags_array[] = {
+	DEF_RO_COMPAT_FLAG_ENTRY(DEDUP)
+};
+
+static const int ro_compat_flags_num = sizeof(ro_compat_flags_array) /
+				       sizeof(struct readable_flag_entry);
 
 #define DEF_INCOMPAT_FLAG_ENTRY(bit_name)		\
 	{BTRFS_FEATURE_INCOMPAT_##bit_name, #bit_name}
@@ -398,6 +407,13 @@ static void __print_readable_flag(u64 flag, struct readable_flag_entry *array,
 			printf("|\n\t\t\t  unknown flag: 0x%llx ", flag);
 	}
 	printf(")\n");
+}
+
+static void print_readable_ro_compat_flag(u64 ro_flag)
+{
+	return __print_readable_flag(ro_flag, ro_compat_flags_array,
+				     ro_compat_flags_num,
+				     BTRFS_FEATURE_COMPAT_RO_SUPP);
 }
 
 static void print_readable_incompat_flag(u64 flag)
@@ -491,6 +507,7 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
 	       (unsigned long long)btrfs_super_compat_flags(sb));
 	printf("compat_ro_flags\t\t0x%llx\n",
 	       (unsigned long long)btrfs_super_compat_ro_flags(sb));
+	print_readable_ro_compat_flag(btrfs_super_compat_ro_flags(sb));
 	printf("incompat_flags\t\t0x%llx\n",
 	       (unsigned long long)btrfs_super_incompat_flags(sb));
 	print_readable_incompat_flag(btrfs_super_incompat_flags(sb));
