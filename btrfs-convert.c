@@ -2453,7 +2453,7 @@ static int convert_open_fs(const char *devname,
 
 static int do_convert(const char *devname, int datacsum, int packing, int noxattr,
 		u32 nodesize, int copylabel, const char *fslabel, int progress,
-		u64 features)
+		u64 features, u64 ro_features)
 {
 	int i, ret, blocks_per_node;
 	int fd = -1;
@@ -2504,8 +2504,9 @@ static int do_convert(const char *devname, int datacsum, int packing, int noxatt
 		fprintf(stderr, "unable to open %s\n", devname);
 		goto fail;
 	}
-	btrfs_parse_features_to_string(features_buf, features);
-	if (features == BTRFS_MKFS_DEFAULT_FEATURES)
+	btrfs_parse_features_to_string(features_buf, features, ro_features);
+	if (features == BTRFS_MKFS_DEFAULT_FEATURES &&
+	    ro_features == 0)
 		strcat(features_buf, " (default)");
 
 	printf("create btrfs filesystem:\n");
@@ -2521,6 +2522,7 @@ static int do_convert(const char *devname, int datacsum, int packing, int noxatt
 	mkfs_cfg.sectorsize = blocksize;
 	mkfs_cfg.stripesize = blocksize;
 	mkfs_cfg.features = features;
+	mkfs_cfg.ro_features = ro_features;
 
 	ret = make_btrfs(fd, &mkfs_cfg);
 	if (ret) {
@@ -3071,6 +3073,7 @@ int main(int argc, char *argv[])
 	char *file;
 	char fslabel[BTRFS_LABEL_SIZE];
 	u64 features = BTRFS_MKFS_DEFAULT_FEATURES;
+	u64 ro_features = 0;
 
 	while(1) {
 		enum { GETOPT_VAL_NO_PROGRESS = 256 };
@@ -3129,7 +3132,8 @@ int main(int argc, char *argv[])
 				char *orig = strdup(optarg);
 				char *tmp = orig;
 
-				tmp = btrfs_parse_fs_features(tmp, &features);
+				tmp = btrfs_parse_fs_features(tmp, &features,
+							      &ro_features);
 				if (tmp) {
 					fprintf(stderr,
 						"Unrecognized filesystem feature '%s'\n",
@@ -3147,7 +3151,9 @@ int main(int argc, char *argv[])
 					char buf[64];
 
 					btrfs_parse_features_to_string(buf,
-						features & ~BTRFS_CONVERT_ALLOWED_FEATURES);
+						features &
+						~BTRFS_CONVERT_ALLOWED_FEATURES,
+						ro_features);
 					fprintf(stderr,
 						"ERROR: features not allowed for convert: %s\n",
 						buf);
@@ -3198,7 +3204,8 @@ int main(int argc, char *argv[])
 		ret = do_rollback(file);
 	} else {
 		ret = do_convert(file, datacsum, packing, noxattr, nodesize,
-				copylabel, fslabel, progress, features);
+				copylabel, fslabel, progress, features,
+				ro_features);
 	}
 	if (ret)
 		return 1;

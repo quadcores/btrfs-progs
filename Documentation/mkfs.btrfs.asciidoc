@@ -208,6 +208,15 @@ reduced-size metadata for extent references, saves a few percent of metadata
 improved representation of file extents where holes are not explicitly
 stored as an extent, saves a few percent of metadata if sparse files are used
 
+*dedup*::
+allow btrfs to use new on-disk format designed for in-band(write time)
+de-duplication.
++
+on-disk storage backend and persist de-duplication status needs this feature.
++
+this feature is RO compat feature, means old kernel can still mount it
+read-only.
+
 BLOCK GROUPS, CHUNKS, RAID
 --------------------------
 

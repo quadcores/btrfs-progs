@@ -1369,6 +1369,7 @@ int main(int ac, char **av)
 	int saved_optind;
 	char fs_uuid[BTRFS_UUID_UNPARSED_SIZE] = { 0 };
 	u64 features = BTRFS_MKFS_DEFAULT_FEATURES;
+	u64 ro_features = 0;
 	struct mkfs_allocation allocation = { 0 };
 	struct btrfs_mkfs_config mkfs_cfg;
 
@@ -1431,7 +1432,8 @@ int main(int ac, char **av)
 				char *orig = strdup(optarg);
 				char *tmp = orig;
 
-				tmp = btrfs_parse_fs_features(tmp, &features);
+				tmp = btrfs_parse_fs_features(tmp, &features,
+							      &ro_features);
 				if (tmp) {
 					fprintf(stderr,
 						"Unrecognized filesystem feature '%s'\n",
@@ -1674,6 +1676,7 @@ int main(int ac, char **av)
 	mkfs_cfg.sectorsize = sectorsize;
 	mkfs_cfg.stripesize = stripesize;
 	mkfs_cfg.features = features;
+	mkfs_cfg.ro_features = ro_features;
 
 	ret = make_btrfs(fd, &mkfs_cfg);
 	if (ret) {
@@ -1828,7 +1831,8 @@ raid_groups:
 			btrfs_group_profile_str(metadata_profile),
 			pretty_size(allocation.system));
 		printf("SSD detected:       %s\n", ssd ? "yes" : "no");
-		btrfs_parse_features_to_string(features_buf, features);
+		btrfs_parse_features_to_string(features_buf, features,
+					       ro_features);
 		printf("Incompat features:  %s", features_buf);
 		printf("\n");
 

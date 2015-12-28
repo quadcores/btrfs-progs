@@ -252,6 +252,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
 	btrfs_set_super_chunk_root_generation(&super, 1);
 	btrfs_set_super_cache_generation(&super, -1);
 	btrfs_set_super_incompat_flags(&super, cfg->features);
+	btrfs_set_super_compat_ro_flags(&super, cfg->ro_features);
 	if (cfg->label)
 		strncpy(super.label, cfg->label, BTRFS_LABEL_SIZE - 1);
 
@@ -574,23 +575,26 @@ out:
 static const struct btrfs_fs_feature {
 	const char *name;
 	u64 flag;
+	u64 ro_flag;
 	const char *desc;
 } mkfs_features[] = {
-	{ "mixed-bg", BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS,
+	{ "mixed-bg", BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS, 0,
 		"mixed data and metadata block groups" },
-	{ "extref", BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF,
+	{ "extref", BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF, 0,
 		"increased hardlink limit per file to 65536" },
-	{ "raid56", BTRFS_FEATURE_INCOMPAT_RAID56,
+	{ "raid56", BTRFS_FEATURE_INCOMPAT_RAID56, 0,
 		"raid56 extended format" },
-	{ "skinny-metadata", BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA,
+	{ "skinny-metadata", BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA, 0,
 		"reduced-size metadata extent refs" },
-	{ "no-holes", BTRFS_FEATURE_INCOMPAT_NO_HOLES,
+	{ "no-holes", BTRFS_FEATURE_INCOMPAT_NO_HOLES, 0,
 		"no explicit hole extents for files" },
+	{ "dedup", 0, BTRFS_FEATURE_COMPAT_RO_DEDUP,
+		"support on-disk dedup backend and persist dedup status" },
 	/* Keep this one last */
-	{ "list-all", BTRFS_FEATURE_LIST_ALL, NULL }
+	{ "list-all", BTRFS_FEATURE_LIST_ALL, 0, NULL }
 };
 
-static int parse_one_fs_feature(const char *name, u64 *flags)
+static int parse_one_fs_feature(const char *name, u64 *flags, u64 *ro_flags)
 {
 	int i;
 	int found = 0;
@@ -599,9 +603,11 @@ static int parse_one_fs_feature(const char *name, u64 *flags)
 		if (name[0] == '^' &&
 			!strcmp(mkfs_features[i].name, name + 1)) {
 			*flags &= ~ mkfs_features[i].flag;
+			*ro_flags &= ~mkfs_features[i].ro_flag;
 			found = 1;
 		} else if (!strcmp(mkfs_features[i].name, name)) {
 			*flags |= mkfs_features[i].flag;
+			*ro_flags |= mkfs_features[i].ro_flag;
 			found = 1;
 		}
 	}
@@ -609,7 +615,7 @@ static int parse_one_fs_feature(const char *name, u64 *flags)
 	return !found;
 }
 
-void btrfs_parse_features_to_string(char *buf, u64 flags)
+void btrfs_parse_features_to_string(char *buf, u64 flags, u64 ro_flags)
 {
 	int i;
 
@@ -621,16 +627,26 @@ void btrfs_parse_features_to_string(char *buf, u64 flags)
 				strcat(buf, ", ");
 			strcat(buf, mkfs_features[i].name);
 		}
+		if (ro_flags & mkfs_features[i].ro_flag) {
+			if (*buf)
+				strcat(buf, ", ");
+			strcat(buf, mkfs_features[i].name);
+		}
 	}
 }
 
-void btrfs_process_fs_features(u64 flags)
+void btrfs_process_fs_features(u64 flags, u64 ro_flags)
 {
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(mkfs_features); i++) {
 		if (flags & mkfs_features[i].flag) {
 			printf("Turning ON incompat feature '%s': %s\n",
+				mkfs_features[i].name,
+				mkfs_features[i].desc);
+		}
+		if (ro_flags & mkfs_features[i].ro_flag) {
+			printf("Turning ON RO compat features '%s': %s\n",
 				mkfs_features[i].name,
 				mkfs_features[i].desc);
 		}
@@ -649,10 +665,17 @@ void btrfs_list_all_fs_features(u64 mask_disallowed)
 			continue;
 		if (mkfs_features[i].flag & BTRFS_MKFS_DEFAULT_FEATURES)
 			is_default = ", default";
-		fprintf(stderr, "%-20s- %s (0x%llx%s)\n",
+		if (mkfs_features[i].flag)
+			printf("%-20s- %s (incompat flag: 0x%llx%s)\n",
 				mkfs_features[i].name,
 				mkfs_features[i].desc,
 				mkfs_features[i].flag,
+				is_default);
+		else
+			printf("%-20s- %s (ro compat flag: 0x%llx%s)\n",
+				mkfs_features[i].name,
+				mkfs_features[i].desc,
+				mkfs_features[i].ro_flag,
 				is_default);
 	}
 }
@@ -661,7 +684,7 @@ void btrfs_list_all_fs_features(u64 mask_disallowed)
  * Return NULL if all features were parsed fine, otherwise return the name of
  * the first unparsed.
  */
-char* btrfs_parse_fs_features(char *namelist, u64 *flags)
+char *btrfs_parse_fs_features(char *namelist, u64 *flags, u64 *ro_flags)
 {
 	char *this_char;
 	char *save_ptr = NULL; /* Satisfy static checkers */
@@ -669,7 +692,7 @@ char* btrfs_parse_fs_features(char *namelist, u64 *flags)
 	for (this_char = strtok_r(namelist, ",", &save_ptr);
 	     this_char != NULL;
 	     this_char = strtok_r(NULL, ",", &save_ptr)) {
-		if (parse_one_fs_feature(this_char, flags))
+		if (parse_one_fs_feature(this_char, flags, ro_flags))
 			return this_char;
 	}
 
