@@ -59,6 +59,9 @@ Specify maximum memory used for hashes.
 Only works for 'inmemory' backend.
 No default value.
 
+*status* <path>::
+Show current in-band de-duplication status of a filesystem.
+
 BACKENDS
 --------
 Btrfs in-band de-duplication support two different backends with their own
