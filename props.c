@@ -187,6 +187,77 @@ out:
 	return ret;
 }
 
+static int prop_dedup(enum prop_object_type type, const char *object,
+	const char *name, const char *value)
+{
+	int ret;
+	ssize_t sret;
+	int fd = -1;
+	DIR *dirstream = NULL;
+	char *buf = NULL;
+	char *xattr_name = NULL;
+	int open_flags = value ? O_RDWR : O_RDONLY;
+
+	fd = open_file_or_dir3(object, &dirstream, open_flags);
+	if (fd == -1) {
+		ret = -errno;
+		fprintf(stderr, "ERROR: open %s failed. %s\n",
+			object, strerror(-ret));
+		goto out;
+	}
+
+	xattr_name = malloc(XATTR_BTRFS_PREFIX_LEN + strlen(name) + 1);
+	if (!xattr_name) {
+		ret = -ENOMEM;
+		goto out;
+	}
+	memcpy(xattr_name, XATTR_BTRFS_PREFIX, XATTR_BTRFS_PREFIX_LEN);
+	memcpy(xattr_name + XATTR_BTRFS_PREFIX_LEN, name, strlen(name));
+	xattr_name[XATTR_BTRFS_PREFIX_LEN + strlen(name)] = '\0';
+
+	if (value)
+		sret = fsetxattr(fd, xattr_name, value, strlen(value), 0);
+	else
+		sret = fgetxattr(fd, xattr_name, NULL, 0);
+	if (sret < 0) {
+		ret = -errno;
+		if (ret != -ENOATTR)
+			fprintf(stderr,
+				"ERROR: failed to %s dedup for %s. %s\n",
+				value ? "set" : "get", object, strerror(-ret));
+		else
+			ret = 0;
+		goto out;
+	}
+	if (!value) {
+		size_t len = sret;
+
+		buf = malloc(len);
+		if (!buf) {
+			ret = -ENOMEM;
+			goto out;
+		}
+		sret = fgetxattr(fd, xattr_name, buf, len);
+		if (sret < 0) {
+			ret = -errno;
+			fprintf(stderr,
+				"ERROR: failed to get dedup for %s. %s\n",
+				object, strerror(-ret));
+			goto out;
+		}
+		fprintf(stdout, "dedup=%.*s\n", (int)len, buf);
+	}
+
+	ret = 0;
+out:
+	free(xattr_name);
+	free(buf);
+	if (fd >= 0)
+		close_file_or_dir(fd, dirstream);
+
+	return ret;
+}
+
 const struct prop_handler prop_handlers[] = {
 	{"ro", "Set/get read-only flag of subvolume.", 0, prop_object_subvol,
 	 prop_read_only},
@@ -194,5 +265,7 @@ const struct prop_handler prop_handlers[] = {
 	 prop_object_dev | prop_object_root, prop_label},
 	{"compression", "Set/get compression for a file or directory", 0,
 	 prop_object_inode, prop_compression},
+	{"dedup", "Set/get dedup for a file or directory", 0,
+	 prop_object_inode, prop_dedup},
 	{NULL, NULL, 0, 0, NULL}
 };

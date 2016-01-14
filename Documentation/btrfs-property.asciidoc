@@ -44,6 +44,8 @@ label::::
 label of device
 compression::::
 compression setting for an inode: lzo, zlib, or "" (empty string)
+dedup::::
+online dedup setting for an inode: disable or "" (empty string)
 
 *list* [-t <type>] <object>::
 Lists available properties with their descriptions for the given object.
