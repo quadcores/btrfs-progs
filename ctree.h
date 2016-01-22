@@ -82,6 +82,9 @@ struct btrfs_free_space_ctl;
 /* on-disk dedup tree (EXPERIMENTAL) */
 #define BTRFS_DEDUP_TREE_OBJECTID 11ULL
 
+/* on-disk cbs tree (EXPERIMENTAL) */
+#define BTRFS_CBS_TREE_OBJECTID 12ULL
+
 /* for storing balance parameters in the root tree */
 #define BTRFS_BALANCE_OBJECTID -4ULL
 
@@ -461,6 +464,7 @@ struct btrfs_super_block {
  */
 #define BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE	(1ULL << 0)
 #define BTRFS_FEATURE_COMPAT_RO_DEDUP		(1ULL << 1)
+#define BTRFS_FEATURE_COMPAT_RO_CBS		(1ULL << 2)
 
 #define BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF	(1ULL << 0)
 #define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL	(1ULL << 1)
@@ -489,7 +493,7 @@ struct btrfs_super_block {
 
 #define BTRFS_FEATURE_COMPAT_RO_SUPP			\
 	(BTRFS_FEATURE_COMPAT_RO_DEDUP |		\
-	 BTRFS_FEATURE_COMPAT_RO_DEDUP)
+	 BTRFS_FEATURE_COMPAT_RO_CBS)
 
 #define BTRFS_FEATURE_INCOMPAT_SUPP			\
 	(BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF |		\
@@ -849,6 +853,20 @@ struct btrfs_dedup_status_item {
 
 struct btrfs_dedup_hash_item {
 	/* on disk length of dedup range */
+	__le64 len;
+
+	/* Spare space */
+	u8 __unused[16];
+
+	/* Hash follows */
+} __attribute__ ((__packed__));
+
+struct btrfs_cbs_status_item {
+	__le16 hash_type;
+} __attribute__ ((__packed__));
+
+struct btrfs_cbs_hash_item {
+	/* on disk length of cbs range */
 	__le64 len;
 
 	/* Spare space */
@@ -1222,6 +1240,10 @@ struct btrfs_root {
 #define BTRFS_DEDUP_STATUS_ITEM_KEY	230
 #define BTRFS_DEDUP_HASH_ITEM_KEY	231
 #define BTRFS_DEDUP_BYTENR_ITEM_KEY	232
+
+#define BTRFS_CBS_STATUS_ITEM_KEY	233
+#define BTRFS_CBS_HASH_ITEM_KEY	234
+#define BTRFS_CBS_BYTENR_ITEM_KEY	235
 
 #define BTRFS_BALANCE_ITEM_KEY	248
 
@@ -2109,8 +2131,16 @@ BTRFS_SETGET_FUNCS(dedup_status_hash_type, struct btrfs_dedup_status_item,
 BTRFS_SETGET_FUNCS(dedup_status_backend, struct btrfs_dedup_status_item,
 		   backend, 16);
 
+/* btrfs_cbs_status */
+BTRFS_SETGET_FUNCS(cbs_status_hash_type, struct btrfs_cbs_status_item,
+		   hash_type, 16);
+
 /* btrfs_dedup_hash_item */
 BTRFS_SETGET_FUNCS(dedup_hash_len, struct btrfs_dedup_hash_item, len, 64);
+
+/* btrfs_cbs_hash_item */
+BTRFS_SETGET_FUNCS(cbs_hash_len, struct btrfs_cbs_hash_item, len, 64);
+
 
 /* struct btrfs_file_extent_item */
 BTRFS_SETGET_FUNCS(file_extent_type, struct btrfs_file_extent_item, type, 8);

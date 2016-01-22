@@ -69,7 +69,7 @@ static int cmd_dedup_enable(int argc, char **argv)
 	char *path;
 	u64 blocksize = BTRFS_DEDUP_BLOCKSIZE_DEFAULT;
 	u16 hash_type = BTRFS_DEDUP_HASH_SHA256;
-	u16 backend = BTRFS_DEDUP_BACKEND_INMEMORY;
+	u16 backend = BTRFS_DEDUP_BACKEND_ONDISK;
 	u64 limit_nr = 0;
 	u64 limit_mem = 0;
 	struct btrfs_ioctl_dedup_args dargs;
