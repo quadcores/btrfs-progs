@@ -31,7 +31,7 @@
 /* Dedup block size limit and default value */
 #define BTRFS_DEDUP_BLOCKSIZE_MAX	(8 * 1024 * 1024)
 #define BTRFS_DEDUP_BLOCKSIZE_MIN	(16 * 1024)
-#define BTRFS_DEDUP_BLOCKSIZE_DEFAULT	(128 * 1024)
+#define BTRFS_DEDUP_BLOCKSIZE_DEFAULT	(32 * 1024)
 
 /* Default dedup limit on number of hash */
 #define BTRFS_DEDUP_LIMIT_NR_DEFAULT	(32 * 1024)

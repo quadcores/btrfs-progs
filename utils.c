@@ -590,6 +590,8 @@ static const struct btrfs_fs_feature {
 		"no explicit hole extents for files" },
 	{ "dedup", 0, BTRFS_FEATURE_COMPAT_RO_DEDUP,
 		"support on-disk dedup backend and persist dedup status" },
+	{ "cbs", 0, BTRFS_FEATURE_COMPAT_RO_CBS,
+		"support on-disk cbs backend and persist cbs status" },	
 	/* Keep this one last */
 	{ "list-all", BTRFS_FEATURE_LIST_ALL, 0, NULL }
 };

@@ -249,35 +249,36 @@ static int cmd_dedup_status(int argc, char **argv)
 		goto out;
 	}
 	ret = 0;
+	printf("|\t\t\t\t\t\t\t\t\t\t\t\t\t|");
 	if (dargs.status == 0) {
-		printf("Status: \t\t\tDisabled\n");
+		printf("\n| Status: \t\t\tDisabled\t\t\t\t\t\t\t\t|\n");
 		goto out;
 	}
-	printf("Status:\t\t\tEnabled\n");
+	printf("\n| Status:\t\t\tEnabled\t\t\t\t\t\t\t\t\t|\n");
 
 	if (dargs.hash_type == BTRFS_DEDUP_HASH_SHA256)
-		printf("Hash algorithm:\t\tSHA-256\n");
+		printf("| Hash algorithm:\t\tSHA-256\t\t\t\t\t\t\t\t\t|\n");
 	else
-		printf("Hash algorithm:\t\tUnrecognized(%x)\n",
+		printf("| Hash algorithm:\t\tUnrecognized(%x)\t\t\t\t\t\t\t\t|\n",
 			dargs.hash_type);
 
 	if (dargs.backend == BTRFS_DEDUP_BACKEND_INMEMORY) {
-		printf("Backend:\t\tIn-memory\n");
+		printf("| Backend:\t\tIn-memory\t\t\t\t\t\t\t\t|\n");
 		print_limit = 1;
 	} else if (dargs.backend == BTRFS_DEDUP_BACKEND_ONDISK) {
-		printf("Backend:\t\tOn-disk\n");
+		printf("| Backend:\t\t\tOn-disk\t\t\t\t\t\t\t\t\t|\n");
 		print_limit = 0;
 	} else  {
-		printf("Backend:\t\tUnrecognized(%x)\n",
+		printf("| Backend:\t\tUnrecognized(%x)\t\t\t\t\t\t\t\t|\n",
 			dargs.backend);
 	}
 
-	printf("Dedup Blocksize:\t%llu\n", dargs.blocksize);
+	printf("| Dedup Blocksize:\t\t%llu\t\t\t\t\t\t\t\t\t|\n", dargs.blocksize);
 
 	if (print_limit) {
-		printf("Number of hash: \t[%llu/%llu]\n", dargs.current_nr,
+		printf("| Number of hash: \t[%llu/%llu]\t\t\t\t\t\t\t\t|\n", dargs.current_nr,
 			dargs.limit_nr);
-		printf("Memory usage: \t\t[%s/%s]\n",
+		printf("| Memory usage: \t\t[%s/%s]\t\t\t\t\t\t\t\t|\n",
 			pretty_size(dargs.current_nr *
 				(dargs.limit_mem / dargs.limit_nr)),
 			pretty_size(dargs.limit_mem));

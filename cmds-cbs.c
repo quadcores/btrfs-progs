@@ -118,8 +118,6 @@ static int cmd_cbs_disable(int argc, char **argv)
 	int fd;
 	int ret;
 
-	printk(KERN_ERR " ##### In %s ##### \n", __func__);
-
 	if (check_argc_exact(argc, 2))
 		usage(cmd_cbs_disable_usage);
 
@@ -183,19 +181,21 @@ static int cmd_cbs_status(int argc, char **argv)
 		goto out;
 	}
 	ret = 0;
+	printf("|\t\t\t\t\t\t\t\t\t\t\t\t\t|");
 	if (dargs.status == 0) {
-		printf("\nStatus: \t\t\tDisabled\n");
+		printf("\n| Status: \t\t\tDisabled\t\t\t\t\t\t\t\t|\n");
 		goto out;
 	}
-	printf("\nStatus:\t\t\tEnabled\n");
+	printf("\n| Status:\t\t\tEnabled\t\t\t\t\t\t\t\t\t|\n");
 
 	if (dargs.hash_type == BTRFS_CBS_HASH_SHA256)
-		printf("Hash algorithm:\t\tSHA-256\n");
+		printf("| Hash algorithm:\t\tSHA-256\t\t\t\t\t\t\t\t\t|");
 	else
-		printf("Hash algorithm:\t\tUnrecognized(%x)\n",
+		printf("| Hash algorithm:\t\tUnrecognized(%x)\t\t\t\t\t\t|\n",
 			dargs.hash_type);
 
-	printf("\nContent-based storage by QuadCores\n\n");
+	printf("\n|\t\t\t\t\t\t\t\t\t\t\t\t\t|");
+	printf("\n| Content-based storage by QuadCores\t\t\t\t\t\t\t\t\t|\n");
 	
 out:
 	close_file_or_dir(fd, dirstream);
